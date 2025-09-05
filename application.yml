@@ -1,0 +1,154 @@
+server:
+  port: 8080
+  max-http-header-size: 8KB
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+
+spring:
+  application:
+    name: high-throughput-task-scheduler
+  
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/taskscheduler
+    username: taskscheduler
+    password: password
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+  
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+  
+  # Redis Configuration
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 50
+        max-idle: 10
+        min-idle: 5
+        max-wait: 3000ms
+  
+  # Flyway Configuration
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# Task Scheduler Configuration
+task-scheduler:
+  # Thread Pool Configuration for High Throughput
+  thread-pool:
+    core-pool-size: 20
+    max-pool-size: 100
+    queue-capacity: 10000
+    keep-alive-seconds: 60
+    thread-name-prefix: "TaskExecutor-"
+    rejection-policy: CALLER_RUNS
+  
+  # Worker Configuration
+  workers:
+    initial-count: 10
+    max-count: 50
+    scaling-threshold: 0.8
+    scale-up-delay: 30000
+    scale-down-delay: 300000
+  
+  # Priority Queue Configuration
+  priority-queue:
+    max-size: 100000
+    batch-size: 100
+    poll-interval: 100
+    persistence-enabled: true
+    cleanup-interval: 3600000
+  
+  # Task Configuration
+  task:
+    default-timeout: 300000
+    max-retry-attempts: 3
+    retry-delay: 5000
+    execution-timeout: 600000
+
+# Resilience4j Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      taskExecution:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+  
+  retry:
+    instances:
+      taskExecution:
+        max-attempts: 3
+        wait-duration: 5s
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - java.lang.RuntimeException
+          - java.util.concurrent.TimeoutException
+
+# Management and Monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,info,scheduledtasks
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+
+# Logging Configuration
+logging:
+  level:
+    com.taskscheduler: INFO
+    org.springframework.scheduling: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/task-scheduler.log
+    max-size: 100MB
+    max-history: 30
+
+# Custom Application Properties
+app:
+  scheduler:
+    enabled: true
+    startup-delay: 10000
+    metrics:
+      enabled: true
+      collection-interval: 60000
