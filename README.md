@@ -474,9 +474,6 @@ spec:
 4. Push to branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
@@ -487,4 +484,4 @@ For questions and support:
 
 ---
 
-**Built with ❤️ for high-performance distributed task processing**
+**Built for high-performance distributed task processing**
